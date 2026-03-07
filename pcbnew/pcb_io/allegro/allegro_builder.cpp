@@ -39,6 +39,7 @@
 
 #include <base_units.h>
 #include <board_design_settings.h>
+#include <convert_basic_shapes_to_polygon.h>
 #include <geometry/shape_utils.h>
 #include <project/net_settings.h>
 #include <footprint.h>
@@ -49,7 +50,7 @@
 #include <pcb_shape.h>
 #include <pcb_track.h>
 #include <zone.h>
-#include <convert_basic_shapes_to_polygon.h>
+#include <zone_utils.h>
 
 
 using namespace ALLEGRO;
@@ -4057,109 +4058,6 @@ void BOARD_BUILDER::createBoardText()
 }
 
 
-/**
- * Merges zones with identical outlines snd nets on different layers into single multi-layer zones.
- *
- * The merged zones (and any non-identical zones) are returned, the zones merged from are destroyed,
- */
-static std::vector<std::unique_ptr<ZONE>> MergeZones( std::vector<std::unique_ptr<ZONE>> aZones, const BOARD& aBoard )
-{
-    std::vector<std::unique_ptr<ZONE>> deduplicatedZones;
-    size_t                             mergedCount = 0;
-    size_t                             originalCount = aZones.size();
-    std::vector<bool>                  merged( aZones.size(), false );
-
-    for( size_t i = 0; i < aZones.size(); i++ )
-    {
-        if( merged[i] )
-            continue;
-
-        ZONE*                                            primary = aZones[i].get();
-        const SHAPE_POLY_SET::POLYGON&                   primaryPolygon = primary->Outline()->CPolygon( 0 );
-        LSET                                             layers = primary->GetLayerSet();
-        std::unordered_map<PCB_LAYER_ID, SHAPE_POLY_SET> mergedFills;
-
-        for( size_t j = i + 1; j < aZones.size(); j++ )
-        {
-            if( merged[j] )
-                continue;
-
-            ZONE* candidate = aZones[j].get();
-
-            if( candidate->GetNetCode() != primary->GetNetCode() )
-                continue;
-
-            const SHAPE_POLY_SET::POLYGON& candidatePolygon = candidate->Outline()->CPolygon( 0 );
-
-            if( primaryPolygon.size() != candidatePolygon.size() )
-                continue;
-
-            bool polygonsDiffer = false;
-
-            for( size_t lineChainId = 0; lineChainId < primaryPolygon.size(); lineChainId++ )
-            {
-                const SHAPE_LINE_CHAIN& primaryChain = primaryPolygon[lineChainId];
-                const SHAPE_LINE_CHAIN& candidateChain = candidatePolygon[lineChainId];
-
-                if( primaryChain.PointCount() != candidateChain.PointCount()
-                    || primaryChain.BBox() != candidateChain.BBox()
-                    || !primaryChain.CompareGeometry( candidateChain ) )
-                {
-                    polygonsDiffer = true;
-                    break;
-                }
-            }
-
-            if( !polygonsDiffer )
-            {
-                for( PCB_LAYER_ID layer : candidate->GetLayerSet() )
-                {
-                    if( SHAPE_POLY_SET* fill = candidate->GetFill( layer ) )
-                        mergedFills[layer] = *fill;
-                }
-
-                layers |= candidate->GetLayerSet();
-                merged[j] = true;
-                mergedCount++;
-
-                wxLogTrace( traceAllegroBuilder, "  Merging zone on %s into zone on %s (net %d)",
-                            aBoard.GetLayerName( candidate->GetFirstLayer() ),
-                            aBoard.GetLayerName( primary->GetFirstLayer() ), primary->GetNetCode() );
-            }
-        }
-
-        if( layers != primary->GetLayerSet() )
-        {
-            for( PCB_LAYER_ID layer : primary->GetLayerSet() )
-            {
-                if( SHAPE_POLY_SET* fill = primary->GetFill( layer ) )
-                    mergedFills[layer] = *fill;
-            }
-
-            primary->SetLayerSet( layers );
-
-            for( const auto& [layer, fill] : mergedFills )
-                primary->SetFilledPolysList( layer, fill );
-
-            primary->SetNeedRefill( false );
-            primary->SetIsFilled( true );
-        }
-
-        // Keep this zone
-        deduplicatedZones.push_back( std::move( aZones[i] ) );
-    }
-
-    if( mergedCount > 0 )
-    {
-        wxLogTrace( traceAllegroBuilder,
-                    "  Merged %zu zones into multi-layer zones (%zu zones remain from %zu)",
-                    mergedCount, originalCount - mergedCount, originalCount );
-    }
-
-    return deduplicatedZones;
-}
-
-
 template <std::derived_from<BOARD_ITEM> T>
 void BulkAddToBoard( BOARD& aBoard, std::vector<std::unique_ptr<T>>&& aItems )
 {
@@ -4262,7 +4160,7 @@ void BOARD_BUILDER::createZones()
     // Allegro often defines the same zone outline on multiple copper layers (e.g.
     // a ground pour spanning all layers). KiCad represents this as a single zone
     // with multiple fill layers.
-    std::vector<std::unique_ptr<ZONE>> mergedZones = MergeZones( std::move( boundaryZones ), m_board );
+    std::vector<std::unique_ptr<ZONE>> mergedZones = MergeZonesWithSameOutline( std::move( boundaryZones ) );
     int                                mergedCount = mergedZones.size();
 
     BulkAddToBoard( m_board, std::move( mergedZones ) );

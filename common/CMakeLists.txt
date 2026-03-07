@@ -840,7 +840,7 @@ if( KICAD_USE_PCH )
             <clipper2/clipper.h>
             <eda_draw_frame.h>
             <kiid.h>
-            <pgm_base.h>            
+            <pgm_base.h>
             <wx/wx.h>
              )
 endif()
@@ -949,6 +949,7 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_track.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_generator.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/zone.cpp
+    ${CMAKE_SOURCE_DIR}/pcbnew/zone_utils.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/collectors.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/connectivity/connectivity_algo.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/connectivity/connectivity_items.cpp

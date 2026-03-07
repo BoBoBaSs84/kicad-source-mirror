@@ -1300,6 +1300,31 @@ BOOST_AUTO_TEST_CASE( CompareGeometry )
 }
 
 
+BOOST_AUTO_TEST_CASE( CompareGeometryReversed )
+{
+    // Square
+    const std::vector<VECTOR2I> ptsA = {
+        { 0, 0 },
+        { 100, 0 },
+        { 100, 100 },
+        { 0, 100 },
+    };
+    // Same points, same start, reversed
+    const std::vector<VECTOR2I> ptsB = {
+        { 0, 0 },
+        { 0, 100 },
+        { 100, 100 },
+        { 100, 0 },
+    };
+
+    SHAPE_LINE_CHAIN chainA( ptsA, true );
+    SHAPE_LINE_CHAIN chainB( ptsB, true );
+
+    BOOST_TEST( !chainA.CompareGeometry( chainB, false ) );
+    BOOST_TEST( chainA.CompareGeometry( chainB, true ) );
+}
+
+
 /**
  * Test for issue #22597: Simplify with tolerance should reduce a polygon
  * created from a rotated rounded rectangle (many small line segments approximating arcs).

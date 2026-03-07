@@ -26,13 +26,44 @@
 
 #include <board.h>
 #include <footprint.h>
+#include <geometry/shape_utils.h>
 #include <zone.h>
+#include <zone_utils.h>
 
 
 struct ZONE_TEST_FIXTURE
 {
     BOARD m_board;
 };
+
+
+static std::unique_ptr<ZONE> CreateSquareZone( BOARD_ITEM_CONTAINER& aParent, BOX2I aBox, PCB_LAYER_ID aLayer )
+{
+    auto zone = std::make_unique<ZONE>( &aParent );
+    zone->SetLayer( aLayer );
+
+    auto outline = std::make_unique<SHAPE_POLY_SET>();
+    outline->AddOutline( KIGEOM::BoxToLineChain( aBox ) );
+
+    zone->SetOutline( outline.release() );
+
+    return zone;
+}
+
+
+/**
+ * Create a similar zone (same outline) on a different layer
+ */
+static std::unique_ptr<ZONE> CreateSimilarZone( BOARD_ITEM_CONTAINER& aParent, const ZONE& aOther, PCB_LAYER_ID aLayer )
+{
+    auto zone = std::make_unique<ZONE>( &aParent );
+    zone->SetLayer( aLayer );
+
+    std::unique_ptr<SHAPE_POLY_SET> outline = std::make_unique<SHAPE_POLY_SET>( *aOther.Outline() );
+    zone->SetOutline( outline.release() );
+
+    return zone;
+}
 
 
 BOOST_FIXTURE_TEST_SUITE( Zone, ZONE_TEST_FIXTURE )
@@ -138,6 +169,78 @@ BOOST_AUTO_TEST_CASE( EmptyZoneGetPosition )
     BOOST_TEST( zone.GetNumCorners() == 0 );
     BOOST_CHECK_NO_THROW( zone.GetPosition() );
     BOOST_TEST( zone.GetPosition() == VECTOR2I( 0, 0 ) );
+}
+
+
+BOOST_AUTO_TEST_CASE( ZoneMergeNull )
+{
+    std::vector<std::unique_ptr<ZONE>> zones;
+
+    zones.emplace_back( std::make_unique<ZONE>( &m_board ) );
+    zones.back()->SetLayer( F_Cu );
+
+    zones.emplace_back( std::make_unique<ZONE>( &m_board ) );
+    zones.back()->SetLayer( F_Cu );
+
+    std::vector<std::unique_ptr<ZONE>> merged = MergeZonesWithSameOutline( std::move( zones ) );
+
+    // They are the same, so they do merge
+    BOOST_TEST( merged.size() == 1 );
+}
+
+
+BOOST_AUTO_TEST_CASE( ZoneMergeNonNullNoMerge )
+{
+    std::vector<std::unique_ptr<ZONE>> zones;
+
+    zones.emplace_back( CreateSquareZone( m_board, BOX2I( VECTOR2I( 0, 0 ), VECTOR2I( 100, 100 ) ), F_Cu ) );
+    zones.emplace_back( CreateSquareZone( m_board, BOX2I( VECTOR2I( 200, 200 ), VECTOR2I( 300, 300 ) ), B_Cu ) );
+
+    std::vector<std::unique_ptr<ZONE>> merged = MergeZonesWithSameOutline( std::move( zones ) );
+
+    // They are different, so they don't merge
+    BOOST_TEST( merged.size() == 2 );
+}
+
+
+BOOST_AUTO_TEST_CASE( ZoneMergeNonNullMerge )
+{
+    std::vector<std::unique_ptr<ZONE>> zones;
+
+    zones.emplace_back( CreateSquareZone( m_board, BOX2I( VECTOR2I( 0, 0 ), VECTOR2I( 100, 100 ) ), F_Cu ) );
+    zones.emplace_back( CreateSimilarZone( m_board, *zones.back(), B_Cu ) );
+
+    std::vector<std::unique_ptr<ZONE>> merged = MergeZonesWithSameOutline( std::move( zones ) );
+
+    // They are the same, so they do merge
+    BOOST_REQUIRE( merged.size() == 1 );
+
+    BOOST_TEST( merged[0]->GetLayerSet() == ( LSET{ F_Cu, B_Cu } ) );
+    BOOST_TEST( merged[0]->GetNumCorners() == 4 );
+}
+
+
+BOOST_AUTO_TEST_CASE( ZoneMergeMergeSameGeomDifferentOrder )
+{
+    std::vector<std::unique_ptr<ZONE>> zones;
+
+    zones.emplace_back( CreateSquareZone( m_board, BOX2I( VECTOR2I( 0, 0 ), VECTOR2I( 100, 100 ) ), F_Cu ) );
+    zones.emplace_back( CreateSimilarZone( m_board, *zones.back(), B_Cu ) );
+
+    // Reverse the outline of one of them
+    // Don't go overboard here - detailed tests of CompareGeometry
+    // should be in the SHAPE_LINE_CHAIN tests.
+    auto newPolyB = std::make_unique<SHAPE_POLY_SET>( *zones.back()->Outline() );
+    newPolyB->Outline( 0 ).Reverse();
+    zones.back()->SetOutline( newPolyB.release() );
+
+    std::vector<std::unique_ptr<ZONE>> merged = MergeZonesWithSameOutline( std::move( zones ) );
+
+    // They are the same, so they do merge
+    BOOST_REQUIRE( merged.size() == 1 );
+
+    BOOST_TEST( merged[0]->GetLayerSet() == LSET( { F_Cu, B_Cu } ) );
+    BOOST_TEST( merged[0]->GetNumCorners() == 4 );
 }
 
 BOOST_AUTO_TEST_SUITE_END()
