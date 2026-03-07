@@ -48,6 +48,7 @@
 #include <tools/drc_tool.h>
 #include <pcbexpr_evaluator.h>
 #include <string_utils.h>
+#include <drc_rules_lexer.h>
 
 #include <drc/drc_rule_parser.h>
 #include <drc/rule_editor/panel_drc_rule_editor.h>
@@ -292,8 +293,8 @@ wxString PANEL_DRC_RULE_EDITOR::getSelectedLayerSource() const
 
     switch( layerValue )
     {
-    case LAYER_SEL_OUTER: return wxS( "outer" );
-    case LAYER_SEL_INNER: return wxS( "inner" );
+    case LAYER_SEL_OUTER: return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_outer );
+    case LAYER_SEL_INNER: return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_inner );
     case LAYER_SEL_TOP:
         switch( m_constraintType )
         {
@@ -1076,9 +1077,9 @@ void PANEL_DRC_RULE_EDITOR::populateLayerSelector( DRC_LAYER_CATEGORY aCategory 
     switch( aCategory )
     {
     case DRC_LAYER_CATEGORY::COPPER_ONLY:
-        m_layerListChoiceCtrl->Append( _( "outer" ) );
+        m_layerListChoiceCtrl->Append( DRC_RULES_LEXER::TokenName( DRCRULE_T::T_outer ) );
         m_layerIDs.push_back( LAYER_SEL_OUTER );
-        m_layerListChoiceCtrl->Append( _( "inner" ) );
+        m_layerListChoiceCtrl->Append( DRC_RULES_LEXER::TokenName( DRCRULE_T::T_inner ) );
         m_layerIDs.push_back( LAYER_SEL_INNER );
 
         for( PCB_LAYER_ID id : m_board->GetEnabledLayers().CuStack() )
@@ -1163,10 +1164,10 @@ wxString PANEL_DRC_RULE_EDITOR::buildLayerClause() const
         switch( layerValue )
         {
         case LAYER_SEL_OUTER:
-            return wxS( "(layer outer)" );
+            return wxString::Format( wxS( "(layer %s)" ), DRC_RULES_LEXER::TokenName( DRCRULE_T::T_outer ) );
 
         case LAYER_SEL_INNER:
-            return wxS( "(layer inner)" );
+            return wxString::Format( wxS( "(layer %s)" ), DRC_RULES_LEXER::TokenName( DRCRULE_T::T_inner ) );
 
         case LAYER_SEL_TOP:
             return DRC_RULE_EDITOR_UTILS::TranslateTopBottomLayer( m_constraintType, true );
@@ -1221,7 +1222,7 @@ void PANEL_DRC_RULE_EDITOR::setSelectedLayers( const std::vector<PCB_LAYER_ID>& 
                                                 const wxString& aLayerSource )
 {
     // Check for synthetic layer keywords first (for round-trip preservation)
-    if( aLayerSource == wxS( "outer" ) )
+    if( aLayerSource == DRC_RULES_LEXER::TokenName( DRCRULE_T::T_outer ) )
     {
         for( size_t i = 0; i < m_layerIDs.size(); ++i )
         {
@@ -1233,7 +1234,7 @@ void PANEL_DRC_RULE_EDITOR::setSelectedLayers( const std::vector<PCB_LAYER_ID>& 
         }
     }
 
-    if( aLayerSource == wxS( "inner" ) )
+    if( aLayerSource == DRC_RULES_LEXER::TokenName( DRCRULE_T::T_inner ) )
     {
         for( size_t i = 0; i < m_layerIDs.size(); ++i )
         {

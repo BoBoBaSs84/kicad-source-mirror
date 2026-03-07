@@ -28,6 +28,8 @@
 #include <string_utils.h>
 #include <wx/ffile.h>
 
+#include <drc_rules_lexer.h>
+
 #include "drc_re_base_constraint_data.h"
 #include "drc_rule_editor_enums.h"
 
@@ -40,7 +42,8 @@ wxString formatLayerClause( const wxString& aLayerSource )
     if( aLayerSource.IsEmpty() )
         return wxEmptyString;
 
-    if( aLayerSource == wxS( "outer" ) || aLayerSource == wxS( "inner" ) )
+    if( aLayerSource == DRC_RULES_LEXER::TokenName( DRCRULE_T::T_outer )
+        || aLayerSource == DRC_RULES_LEXER::TokenName( DRCRULE_T::T_inner ) )
         return wxString::Format( wxS( "(layer %s)" ), aLayerSource );
 
     return wxString::Format( wxS( "(layer \"%s\")" ), EscapeString( aLayerSource, CTX_QUOTED_STR ) );
@@ -218,10 +221,10 @@ wxString DRC_RULE_SAVER::generateLayerClause( const LSET& aLayers, const BOARD* 
         return wxEmptyString;
 
     if( ( aLayers & LSET::AllCuMask() ) == LSET::ExternalCuMask() )
-        return wxS( "(layer outer)" );
+        return wxString::Format( wxS( "(layer %s)" ), DRC_RULES_LEXER::TokenName( DRCRULE_T::T_outer ) );
 
     if( ( aLayers & LSET::AllCuMask() ) == LSET::InternalCuMask() )
-        return wxS( "(layer inner)" );
+        return wxString::Format( wxS( "(layer %s)" ), DRC_RULES_LEXER::TokenName( DRCRULE_T::T_inner ) );
 
     // The parser only accepts a single layer name, so emit the first matching layer.
     // Multi-layer conditions should use "outer" or "inner" keywords above.

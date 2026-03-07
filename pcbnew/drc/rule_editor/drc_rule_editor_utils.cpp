@@ -26,6 +26,7 @@
 #include <reporter.h>
 #include <component_classes/component_class_assignment_rule.h>
 #include <drc/drc_rule_parser.h>
+#include <drc_rules_lexer.h>
 #include <drc/drc_rule.h>
 #include <drc/drc_rule_condition.h>
 #include "drc_re_validator_numeric_ctrl.h"
@@ -46,31 +47,31 @@
 using CODE_MAP = std::unordered_map<DRC_RULE_EDITOR_CONSTRAINT_NAME, const char*>;
 using REVERSE_CODE_MAP = std::unordered_map<wxString, DRC_RULE_EDITOR_CONSTRAINT_NAME, wxStringHash, wxStringEqual>;
 
-static const CODE_MAP sCodeMap = { { MINIMUM_CLEARANCE, "clearance" },
-                                   { CREEPAGE_DISTANCE, "creepage" },
-                                   { MINIMUM_CONNECTION_WIDTH, "connection_width" },
-                                   { COPPER_TO_HOLE_CLEARANCE, "hole_clearance" },
-                                   { MINIMUM_THERMAL_RELIEF_SPOKE_COUNT, "min_resolved_spokes" },
-                                   { MINIMUM_ANNULAR_WIDTH, "annular_width" },
-                                   { COPPER_TO_EDGE_CLEARANCE, "edge_clearance" },
-                                   { COURTYARD_CLEARANCE, "courtyard_clearance" },
-                                   { PHYSICAL_CLEARANCE, "physical_clearance" },
-                                   { MINIMUM_DRILL_SIZE, "hole_size" },
-                                   { HOLE_SIZE, "hole_size" },
-                                   { HOLE_TO_HOLE_DISTANCE, "hole_to_hole" },
-                                   { MINIMUM_VIA_DIAMETER, "via_diameter" },
+static const CODE_MAP sCodeMap = { { MINIMUM_CLEARANCE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_clearance ) },
+                                   { CREEPAGE_DISTANCE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_creepage ) },
+                                   { MINIMUM_CONNECTION_WIDTH, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_connection_width ) },
+                                   { COPPER_TO_HOLE_CLEARANCE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_hole_clearance ) },
+                                   { MINIMUM_THERMAL_RELIEF_SPOKE_COUNT, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_min_resolved_spokes ) },
+                                   { MINIMUM_ANNULAR_WIDTH, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_annular_width ) },
+                                   { COPPER_TO_EDGE_CLEARANCE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_edge_clearance ) },
+                                   { COURTYARD_CLEARANCE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_courtyard_clearance ) },
+                                   { PHYSICAL_CLEARANCE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_physical_clearance ) },
+                                   { MINIMUM_DRILL_SIZE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_hole_size ) },
+                                   { HOLE_SIZE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_hole_size ) },
+                                   { HOLE_TO_HOLE_DISTANCE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_hole_to_hole ) },
+                                   { MINIMUM_VIA_DIAMETER, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_via_diameter ) },
                                    { VIA_STYLE, "via_style" },
-                                   { MINIMUM_TEXT_HEIGHT_AND_THICKNESS, "text_height" },
-                                   { SILK_TO_SILK_CLEARANCE, "silk_clearance" },
-                                   { SILK_TO_SOLDERMASK_CLEARANCE, "silk_clearance" },
-                                   { MINIMUM_SOLDERMASK_SLIVER, "solder_mask_sliver" },
-                                   { SOLDERMASK_EXPANSION, "solder_mask_expansion" },
-                                   { SOLDERPASTE_EXPANSION, "solder_paste_abs_margin" },
-                                   { MATCHED_LENGTH_DIFF_PAIR, "length" },
-                                   { ROUTING_DIFF_PAIR, "diff_pair_gap" },
-                                   { ROUTING_WIDTH, "track_width" },
-                                   { MAXIMUM_VIA_COUNT, "via_count" },
-                                   { ABSOLUTE_LENGTH, "length" },
+                                   { MINIMUM_TEXT_HEIGHT_AND_THICKNESS, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_text_height ) },
+                                   { SILK_TO_SILK_CLEARANCE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_silk_clearance ) },
+                                   { SILK_TO_SOLDERMASK_CLEARANCE, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_silk_clearance ) },
+                                   { MINIMUM_SOLDERMASK_SLIVER, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_solder_mask_sliver ) },
+                                   { SOLDERMASK_EXPANSION, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_solder_mask_expansion ) },
+                                   { SOLDERPASTE_EXPANSION, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_solder_paste_abs_margin ) },
+                                   { MATCHED_LENGTH_DIFF_PAIR, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_length ) },
+                                   { ROUTING_DIFF_PAIR, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_diff_pair_gap ) },
+                                   { ROUTING_WIDTH, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_track_width ) },
+                                   { MAXIMUM_VIA_COUNT, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_via_count ) },
+                                   { ABSOLUTE_LENGTH, DRC_RULES_LEXER::TokenName( DRCRULE_T::T_length ) },
                                    { PERMITTED_LAYERS, "permitted_layers" },
                                    { ALLOWED_ORIENTATION, "allowed_orientation" },
                                    { VIAS_UNDER_SMD, "disallow_via" } };
@@ -96,42 +97,42 @@ void DRC_RULE_EDITOR_UTILS::RegisterRuleConverter( RuleConverter aConverter )
 
 static wxString GetConstraintCodeFromType( DRC_CONSTRAINT_T aType )
 {
-    switch( aType )
+    switch( aType )                                                                                                   
     {
-    case CLEARANCE_CONSTRAINT:               return "clearance";
-    case EDGE_CLEARANCE_CONSTRAINT:          return "edge_clearance";
-    case HOLE_CLEARANCE_CONSTRAINT:          return "hole_clearance";
-    case HOLE_TO_HOLE_CONSTRAINT:            return "hole_to_hole";
-    case HOLE_SIZE_CONSTRAINT:               return "hole_size";
-    case TRACK_WIDTH_CONSTRAINT:             return "track_width";
-    case ANNULAR_WIDTH_CONSTRAINT:           return "annular_width";
-    case VIA_DIAMETER_CONSTRAINT:            return "via_diameter";
-    case DISALLOW_CONSTRAINT:                return "disallow";
-    case COURTYARD_CLEARANCE_CONSTRAINT:     return "courtyard_clearance";
-    case SILK_CLEARANCE_CONSTRAINT:          return "silk_clearance";
-    case TEXT_HEIGHT_CONSTRAINT:             return "text_height";
-    case TEXT_THICKNESS_CONSTRAINT:          return "text_thickness";
-    case TRACK_ANGLE_CONSTRAINT:             return "track_angle";
-    case TRACK_SEGMENT_LENGTH_CONSTRAINT:    return "track_segment_length";
-    case CONNECTION_WIDTH_CONSTRAINT:        return "connection_width";
-    case VIA_DANGLING_CONSTRAINT:            return "via_dangling";
-    case ZONE_CONNECTION_CONSTRAINT:         return "zone_connection";
-    case THERMAL_RELIEF_GAP_CONSTRAINT:      return "thermal_relief_gap";
-    case THERMAL_SPOKE_WIDTH_CONSTRAINT:     return "thermal_spoke_width";
-    case MIN_RESOLVED_SPOKES_CONSTRAINT:     return "min_resolved_spokes";
-    case SOLDER_MASK_EXPANSION_CONSTRAINT:   return "solder_mask_expansion";
-    case SOLDER_PASTE_ABS_MARGIN_CONSTRAINT: return "solder_paste_abs_margin";
-    case SOLDER_PASTE_REL_MARGIN_CONSTRAINT: return "solder_paste_rel_margin";
-    case LENGTH_CONSTRAINT:                  return "length";
-    case SKEW_CONSTRAINT:                    return "skew";
-    case VIA_COUNT_CONSTRAINT:               return "via_count";
-    case DIFF_PAIR_GAP_CONSTRAINT:           return "diff_pair_gap";
-    case MAX_UNCOUPLED_CONSTRAINT:           return "diff_pair_uncoupled";
-    case PHYSICAL_CLEARANCE_CONSTRAINT:      return "physical_clearance";
-    case PHYSICAL_HOLE_CLEARANCE_CONSTRAINT: return "physical_hole_clearance";
-    case BRIDGED_MASK_CONSTRAINT:            return "bridged_mask";
-    case SOLDER_MASK_SLIVER_CONSTRAINT:      return "solder_mask_sliver";
-    case ASSERTION_CONSTRAINT:               return "assertion";
+    case CLEARANCE_CONSTRAINT:               return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_clearance );             
+    case EDGE_CLEARANCE_CONSTRAINT:          return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_edge_clearance );
+    case HOLE_CLEARANCE_CONSTRAINT:          return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_hole_clearance );
+    case HOLE_TO_HOLE_CONSTRAINT:            return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_hole_to_hole );
+    case HOLE_SIZE_CONSTRAINT:               return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_hole_size );
+    case TRACK_WIDTH_CONSTRAINT:             return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_track_width );
+    case ANNULAR_WIDTH_CONSTRAINT:           return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_annular_width );
+    case VIA_DIAMETER_CONSTRAINT:            return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_via_diameter );
+    case DISALLOW_CONSTRAINT:                return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_disallow );
+    case COURTYARD_CLEARANCE_CONSTRAINT:     return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_courtyard_clearance );
+    case SILK_CLEARANCE_CONSTRAINT:          return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_silk_clearance );
+    case TEXT_HEIGHT_CONSTRAINT:             return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_text_height );
+    case TEXT_THICKNESS_CONSTRAINT:          return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_text_thickness );
+    case TRACK_ANGLE_CONSTRAINT:             return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_track_angle );
+    case TRACK_SEGMENT_LENGTH_CONSTRAINT:    return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_track_segment_length );
+    case CONNECTION_WIDTH_CONSTRAINT:        return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_connection_width );
+    case VIA_DANGLING_CONSTRAINT:            return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_via_dangling );
+    case ZONE_CONNECTION_CONSTRAINT:         return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_zone_connection );
+    case THERMAL_RELIEF_GAP_CONSTRAINT:      return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_thermal_relief_gap );
+    case THERMAL_SPOKE_WIDTH_CONSTRAINT:     return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_thermal_spoke_width );
+    case MIN_RESOLVED_SPOKES_CONSTRAINT:     return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_min_resolved_spokes );
+    case SOLDER_MASK_EXPANSION_CONSTRAINT:   return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_solder_mask_expansion );
+    case SOLDER_PASTE_ABS_MARGIN_CONSTRAINT: return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_solder_paste_abs_margin );
+    case SOLDER_PASTE_REL_MARGIN_CONSTRAINT: return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_solder_paste_rel_margin );
+    case LENGTH_CONSTRAINT:                  return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_length );
+    case SKEW_CONSTRAINT:                    return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_skew );
+    case VIA_COUNT_CONSTRAINT:               return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_via_count );
+    case DIFF_PAIR_GAP_CONSTRAINT:           return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_diff_pair_gap );
+    case MAX_UNCOUPLED_CONSTRAINT:           return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_diff_pair_uncoupled );
+    case PHYSICAL_CLEARANCE_CONSTRAINT:      return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_physical_clearance );
+    case PHYSICAL_HOLE_CLEARANCE_CONSTRAINT: return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_physical_hole_clearance );
+    case BRIDGED_MASK_CONSTRAINT:            return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_bridged_mask );
+    case SOLDER_MASK_SLIVER_CONSTRAINT:      return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_solder_mask_sliver );
+    case ASSERTION_CONSTRAINT:               return DRC_RULES_LEXER::TokenName( DRCRULE_T::T_assertion );
     default:                                 return "";
     }
 }
