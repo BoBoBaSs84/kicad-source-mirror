@@ -226,7 +226,9 @@ wxString SCH_FIELD::GetShownText( bool aAllowExtraText, int aDepth ) const
         return GetShownText( &currentSheet, aAllowExtraText, aDepth, variantName );
     }
     else
+    {
         return GetShownText( nullptr, aAllowExtraText, aDepth );
+    }
 }
 
 

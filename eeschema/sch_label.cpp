@@ -794,6 +794,8 @@ bool SCH_LABEL_BASE::ResolveTextVar( const SCH_SHEET_PATH* aPath, wxString* toke
     if( !schematic )
         return false;
 
+    wxString variant = schematic->GetCurrentVariant();
+
     if( operatingPoint.Matches( *token ) )
     {
         int      precision = 3;
@@ -865,7 +867,7 @@ bool SCH_LABEL_BASE::ResolveTextVar( const SCH_SHEET_PATH* aPath, wxString* toke
 
         for( SCH_RULE_AREA* ruleArea : directive->GetConnectedRuleAreas() )
         {
-            if( ruleArea->GetExcludedFromBOM() )
+            if( ruleArea->GetExcludedFromBOM( aPath, variant ) )
                 *token = _( "Excluded from BOM" );
         }
 
@@ -878,7 +880,7 @@ bool SCH_LABEL_BASE::ResolveTextVar( const SCH_SHEET_PATH* aPath, wxString* toke
 
         for( SCH_RULE_AREA* ruleArea : directive->GetConnectedRuleAreas() )
         {
-            if( ruleArea->GetExcludedFromBoard() )
+            if( ruleArea->GetExcludedFromBoard( aPath, variant ) )
                 *token = _( "Excluded from board" );
         }
 
@@ -891,7 +893,7 @@ bool SCH_LABEL_BASE::ResolveTextVar( const SCH_SHEET_PATH* aPath, wxString* toke
 
         for( SCH_RULE_AREA* ruleArea : directive->GetConnectedRuleAreas() )
         {
-            if( ruleArea->GetExcludedFromSim() )
+            if( ruleArea->GetExcludedFromSim( aPath, variant ) )
                 *token = _( "Excluded from simulation" );
         }
 
@@ -904,7 +906,7 @@ bool SCH_LABEL_BASE::ResolveTextVar( const SCH_SHEET_PATH* aPath, wxString* toke
 
         for( SCH_RULE_AREA* ruleArea : directive->GetConnectedRuleAreas() )
         {
-            if( ruleArea->GetDNP() )
+            if( ruleArea->GetDNP( aPath, variant ) )
                 *token = _( "DNP" );
         }
 
