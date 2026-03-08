@@ -198,7 +198,7 @@ public:
 
     // Attribute Toggles
     static TOOL_ACTION setExcludeFromBOM;
-    static TOOL_ACTION setExcludeFromSimulation;
+    static TOOL_ACTION setExcludeFromSim;
     static TOOL_ACTION setExcludeFromBoard;
     static TOOL_ACTION setDNP;
 

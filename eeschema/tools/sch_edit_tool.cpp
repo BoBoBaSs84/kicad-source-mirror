@@ -715,10 +715,10 @@ bool SCH_EDIT_TOOL::Init()
                 CONDITIONAL_MENU* menu = new CONDITIONAL_MENU( moveTool );
                 menu->SetUntranslatedTitle( _HKI( "Attributes" ) );
 
-                menu->AddCheckItem( SCH_ACTIONS::setExcludeFromSimulation,    S_C::ShowAlways );
-                menu->AddCheckItem( SCH_ACTIONS::setExcludeFromBOM,           S_C::ShowAlways );
-                menu->AddCheckItem( SCH_ACTIONS::setExcludeFromBoard,         S_C::ShowAlways );
-                menu->AddCheckItem( SCH_ACTIONS::setDNP,                      S_C::ShowAlways );
+                menu->AddCheckItem( SCH_ACTIONS::setExcludeFromSim,   S_C::ShowAlways );
+                menu->AddCheckItem( SCH_ACTIONS::setExcludeFromBOM,   S_C::ShowAlways );
+                menu->AddCheckItem( SCH_ACTIONS::setExcludeFromBoard, S_C::ShowAlways );
+                menu->AddCheckItem( SCH_ACTIONS::setDNP,              S_C::ShowAlways );
 
                 return menu;
             };
@@ -857,12 +857,11 @@ bool SCH_EDIT_TOOL::Init()
     selToolMenu.AddItem( ACTIONS::unselectAll,         S_C::ShowAlways, 400 );
 
     ACTION_MANAGER* mgr = m_toolMgr->GetActionManager();
-    // clang-format off
-    mgr->SetConditions( SCH_ACTIONS::setDNP,                   ACTION_CONDITIONS().Check( attribDNPCond ) );
-    mgr->SetConditions( SCH_ACTIONS::setExcludeFromSimulation, ACTION_CONDITIONS().Check( attribExcludeFromSimCond ) );
-    mgr->SetConditions( SCH_ACTIONS::setExcludeFromBOM,        ACTION_CONDITIONS().Check( attribExcludeFromBOMCond ) );
-    mgr->SetConditions( SCH_ACTIONS::setExcludeFromBoard,      ACTION_CONDITIONS().Check( attribExcludeFromBoardCond ) );
-    // clang-format on
+
+    mgr->SetConditions( SCH_ACTIONS::setDNP,              ACTION_CONDITIONS().Check( attribDNPCond ) );
+    mgr->SetConditions( SCH_ACTIONS::setExcludeFromSim,   ACTION_CONDITIONS().Check( attribExcludeFromSimCond ) );
+    mgr->SetConditions( SCH_ACTIONS::setExcludeFromBOM,   ACTION_CONDITIONS().Check( attribExcludeFromBOMCond ) );
+    mgr->SetConditions( SCH_ACTIONS::setExcludeFromBoard, ACTION_CONDITIONS().Check( attribExcludeFromBoardCond ) );
 
     return true;
 }
@@ -3521,10 +3520,10 @@ int SCH_EDIT_TOOL::SetAttribute( const TOOL_EVENT& aEvent )
 
     for( const auto& [item, _] : collectedItems )
     {
-        if( ( aEvent.IsAction( &SCH_ACTIONS::setDNP )                   && !item->GetDNP( sheet, variant ) )
-         || ( aEvent.IsAction( &SCH_ACTIONS::setExcludeFromSimulation ) && !item->GetExcludedFromSim( sheet, variant ) )
-         || ( aEvent.IsAction( &SCH_ACTIONS::setExcludeFromBOM )        && !item->GetExcludedFromBOM( sheet, variant ) )
-         || ( aEvent.IsAction( &SCH_ACTIONS::setExcludeFromBoard )      && !item->GetExcludedFromBoard( sheet, variant ) ) )
+        if( ( aEvent.IsAction( &SCH_ACTIONS::setDNP )              && !item->GetDNP( sheet, variant ) )
+         || ( aEvent.IsAction( &SCH_ACTIONS::setExcludeFromSim )   && !item->GetExcludedFromSim( sheet, variant ) )
+         || ( aEvent.IsAction( &SCH_ACTIONS::setExcludeFromBOM )   && !item->GetExcludedFromBOM( sheet, variant ) )
+         || ( aEvent.IsAction( &SCH_ACTIONS::setExcludeFromBoard ) && !item->GetExcludedFromBoard( sheet, variant ) ) )
         {
             new_state = true;
             break;
@@ -3538,7 +3537,7 @@ int SCH_EDIT_TOOL::SetAttribute( const TOOL_EVENT& aEvent )
         if( aEvent.IsAction( &SCH_ACTIONS::setDNP ) )
             item->SetDNP( new_state, sheet, variant );
 
-        if( aEvent.IsAction( &SCH_ACTIONS::setExcludeFromSimulation ) )
+        if( aEvent.IsAction( &SCH_ACTIONS::setExcludeFromSim ) )
             item->SetExcludedFromSim( new_state, sheet, variant );
 
         if( aEvent.IsAction( &SCH_ACTIONS::setExcludeFromBOM ) )
@@ -3672,7 +3671,7 @@ void SCH_EDIT_TOOL::setTransitions()
     Go( &SCH_EDIT_TOOL::SetAttribute,       SCH_ACTIONS::setDNP.MakeEvent() );
     Go( &SCH_EDIT_TOOL::SetAttribute,       SCH_ACTIONS::setExcludeFromBOM.MakeEvent() );
     Go( &SCH_EDIT_TOOL::SetAttribute,       SCH_ACTIONS::setExcludeFromBoard.MakeEvent() );
-    Go( &SCH_EDIT_TOOL::SetAttribute,       SCH_ACTIONS::setExcludeFromSimulation.MakeEvent() );
+    Go( &SCH_EDIT_TOOL::SetAttribute,       SCH_ACTIONS::setExcludeFromSim.MakeEvent() );
 
     Go( &SCH_EDIT_TOOL::CleanupSheetPins,   SCH_ACTIONS::cleanupSheetPins.MakeEvent() );
     Go( &SCH_EDIT_TOOL::GlobalEdit,         SCH_ACTIONS::editTextAndGraphics.MakeEvent() );

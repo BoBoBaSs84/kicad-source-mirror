@@ -1079,7 +1079,7 @@ TOOL_ACTION SCH_ACTIONS::setExcludeFromBOM( TOOL_ACTION_ARGS()
         .FriendlyName( _( "Exclude from Bill of Materials" ) )
         .Tooltip( _( "Set the exclude from bill of materials attribute" ) ) );
 
-TOOL_ACTION SCH_ACTIONS::setExcludeFromSimulation( TOOL_ACTION_ARGS()
+TOOL_ACTION SCH_ACTIONS::setExcludeFromSim( TOOL_ACTION_ARGS()
         .Name( "eeschema.EditorControl.setExcludeFromSimulation" )
         .Scope( AS_GLOBAL )
         .FriendlyName( _( "Exclude from Simulation" ) )

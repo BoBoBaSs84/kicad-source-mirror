@@ -165,10 +165,10 @@ void SCH_EDIT_FRAME::doReCreateMenuBar()
     ACTION_MENU* submenuAttributes = new ACTION_MENU( false, selTool );
     submenuAttributes->SetTitle( _( "Attributes" ) );
 
-    submenuAttributes->Add( SCH_ACTIONS::setExcludeFromSimulation, ACTION_MENU::CHECK );
-    submenuAttributes->Add( SCH_ACTIONS::setExcludeFromBOM,        ACTION_MENU::CHECK );
-    submenuAttributes->Add( SCH_ACTIONS::setExcludeFromBoard,      ACTION_MENU::CHECK );
-    submenuAttributes->Add( SCH_ACTIONS::setDNP,                   ACTION_MENU::CHECK );
+    submenuAttributes->Add( SCH_ACTIONS::setExcludeFromSim,    ACTION_MENU::CHECK );
+    submenuAttributes->Add( SCH_ACTIONS::setExcludeFromBOM,    ACTION_MENU::CHECK );
+    submenuAttributes->Add( SCH_ACTIONS::setExcludeFromBoard,  ACTION_MENU::CHECK );
+    submenuAttributes->Add( SCH_ACTIONS::setDNP,               ACTION_MENU::CHECK );
 
     editMenu->Add( submenuAttributes );
 
@@ -180,8 +180,8 @@ void SCH_EDIT_FRAME::doReCreateMenuBar()
     ACTION_MENU* showHidePanels = new ACTION_MENU( false, selTool );
     showHidePanels->SetTitle( _( "Panels" ) );
 
-    showHidePanels->Add( ACTIONS::showProperties, ACTION_MENU::CHECK );
-    showHidePanels->Add( ACTIONS::showSearch, ACTION_MENU::CHECK );
+    showHidePanels->Add( ACTIONS::showProperties,    ACTION_MENU::CHECK );
+    showHidePanels->Add( ACTIONS::showSearch,        ACTION_MENU::CHECK );
     showHidePanels->Add( SCH_ACTIONS::showHierarchy, ACTION_MENU::CHECK );
 
     if( ADVANCED_CFG::GetCfg().m_IncrementalConnectivity )
