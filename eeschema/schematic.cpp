@@ -169,6 +169,7 @@ void SCHEMATIC::Reset()
 
     ensureVirtualRoot();
     ensureDefaultTopLevelSheet();
+    loadBusAliasesFromProject();
 }
 
 
